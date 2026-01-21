@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react'
 import { supabase, getDeviceId, canEditPost } from '../lib/supabase'
 import { checkRateLimit } from '../lib/edgeFunctions'
 import { checkFormContent, isValidLebanesePhone } from '../lib/contentModeration'
+import { generateDeletionCode, hashDeletionCode } from '../lib/deletionCode'
 import ShelterRequestCard from '../components/ShelterRequestCard'
 import ShelterRequestForm from '../components/ShelterRequestForm'
+import DeletionCodeDisplay from '../components/DeletionCodeDisplay'
 
 function ShelterRequestsPage({ isAdmin }) {
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [searchArea, setSearchArea] = useState('')
+  const [deletionCode, setDeletionCode] = useState(null)
 
   useEffect(() => {
     loadRequests()
@@ -55,16 +58,22 @@ function ShelterRequestsPage({ isAdmin }) {
         return
       }
 
+      // Generate deletion code
+      const code = generateDeletionCode()
+      const codeHash = hashDeletionCode(code)
+
       const { error } = await supabase
         .from('shelter_requests')
         .insert([{
           ...formData,
-          device_id: deviceId
+          device_id: deviceId,
+          deletion_code_hash: codeHash
         }])
 
       if (error) throw error
 
-      alert('تم إضافة الطلب بنجاح! نأمل أن تجد مأوى قريباً.')
+      // Show deletion code to user
+      setDeletionCode(code)
       setShowForm(false)
       loadRequests()
     } catch (error) {
@@ -169,6 +178,16 @@ function ShelterRequestsPage({ isAdmin }) {
             onReportSuccess={loadRequests}
           />
         ))
+      )}
+
+      {deletionCode && (
+        <DeletionCodeDisplay
+          code={deletionCode}
+          onClose={() => {
+            setDeletionCode(null)
+            loadRequests()
+          }}
+        />
       )}
     </div>
   )
