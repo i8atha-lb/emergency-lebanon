@@ -5,6 +5,7 @@ import { checkFormContent, isValidLebanesePhone } from '../lib/contentModeration
 import { generateDeletionCode, hashDeletionCode } from '../lib/deletionCode'
 import DeletionCodeDisplay from '../components/DeletionCodeDisplay'
 import DeleteWithCode from '../components/DeleteWithCode'
+import { LEBANESE_LOCATIONS } from '../lib/locations'
 
 function AidPage({ isAdmin }) {
   const [aidPosts, setAidPosts] = useState([])
@@ -12,6 +13,8 @@ function AidPage({ isAdmin }) {
   const [showForm, setShowForm] = useState(false)
   const [filterType, setFilterType] = useState('all')
   const [deletionCode, setDeletionCode] = useState(null)
+  const [customLocation, setCustomLocation] = useState('')
+  const [showCustomLocation, setShowCustomLocation] = useState(false)
   const [formData, setFormData] = useState({
     type: 'needed',
     category: '',
@@ -202,13 +205,44 @@ function AidPage({ isAdmin }) {
                 required
               />
 
-              <input
-                type="text"
+              <select
                 className="input"
-                placeholder="المنطقة (اختياري)"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              />
+                value={showCustomLocation ? 'custom' : formData.location}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value === 'custom') {
+                    setShowCustomLocation(true)
+                    setFormData({ ...formData, location: '' })
+                  } else {
+                    setShowCustomLocation(false)
+                    setCustomLocation('')
+                    setFormData({ ...formData, location: value })
+                  }
+                }}
+                style={{ marginBottom: showCustomLocation ? '8px' : '16px' }}
+              >
+                <option value="">اختر المنطقة (اختياري)</option>
+                {LEBANESE_LOCATIONS.map((location) => (
+                  <option key={location} value={location}>
+                    {location}
+                  </option>
+                ))}
+                <option value="custom">➕ منطقة أخرى (حدد بنفسك)</option>
+              </select>
+
+              {showCustomLocation && (
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="اكتب اسم المنطقة"
+                  value={customLocation}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setCustomLocation(value)
+                    setFormData({ ...formData, location: value })
+                  }}
+                />
+              )}
 
               <input
                 type="text"

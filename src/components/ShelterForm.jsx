@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { LEBANESE_LOCATIONS } from '../lib/locations'
 
 function ShelterForm({ onSubmit, onCancel, initialData }) {
   const [formData, setFormData] = useState({
@@ -10,11 +11,14 @@ function ShelterForm({ onSubmit, onCancel, initialData }) {
     duration: '',
     notes: ''
   })
+  const [customLocation, setCustomLocation] = useState('')
+  const [showCustomLocation, setShowCustomLocation] = useState(false)
 
   useEffect(() => {
     if (initialData) {
+      const locationInList = LEBANESE_LOCATIONS.includes(initialData.location_area || '')
       setFormData({
-        location_area: initialData.location_area || '',
+        location_area: locationInList ? initialData.location_area : '',
         address_details: initialData.address_details || '',
         capacity: initialData.capacity || '',
         contact_phone: initialData.contact_phone || '',
@@ -22,6 +26,10 @@ function ShelterForm({ onSubmit, onCancel, initialData }) {
         duration: initialData.duration || '',
         notes: initialData.notes || ''
       })
+      if (!locationInList && initialData.location_area) {
+        setCustomLocation(initialData.location_area)
+        setShowCustomLocation(true)
+      }
     }
   }, [initialData])
 
@@ -30,6 +38,24 @@ function ShelterForm({ onSubmit, onCancel, initialData }) {
       ...formData,
       [e.target.name]: e.target.value
     })
+  }
+
+  const handleLocationChange = (e) => {
+    const value = e.target.value
+    if (value === 'custom') {
+      setShowCustomLocation(true)
+      setFormData({ ...formData, location_area: '' })
+    } else {
+      setShowCustomLocation(false)
+      setCustomLocation('')
+      setFormData({ ...formData, location_area: value })
+    }
+  }
+
+  const handleCustomLocationChange = (e) => {
+    const value = e.target.value
+    setCustomLocation(value)
+    setFormData({ ...formData, location_area: value })
   }
 
   const handleSubmit = (e) => {
@@ -45,15 +71,33 @@ function ShelterForm({ onSubmit, onCancel, initialData }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <input
-        type="text"
+      <select
         name="location_area"
-        placeholder="المنطقة (مطلوب) - مثال: بيروت، الضاحية، صيدا، صور..."
-        value={formData.location_area}
-        onChange={handleChange}
+        value={showCustomLocation ? 'custom' : formData.location_area}
+        onChange={handleLocationChange}
         className="input"
         required
-      />
+        style={{ marginBottom: showCustomLocation ? '8px' : '16px' }}
+      >
+        <option value="">اختر المنطقة (مطلوب)</option>
+        {LEBANESE_LOCATIONS.map((location) => (
+          <option key={location} value={location}>
+            {location}
+          </option>
+        ))}
+        <option value="custom">➕ منطقة أخرى (حدد بنفسك)</option>
+      </select>
+
+      {showCustomLocation && (
+        <input
+          type="text"
+          placeholder="اكتب اسم المنطقة"
+          value={customLocation}
+          onChange={handleCustomLocationChange}
+          className="input"
+          required
+        />
+      )}
 
       <input
         type="text"

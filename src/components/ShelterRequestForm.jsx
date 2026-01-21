@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LEBANESE_LOCATIONS } from '../lib/locations'
 
 function ShelterRequestForm({ onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ function ShelterRequestForm({ onSubmit, onCancel }) {
     contact_name: '',
     notes: ''
   })
+  const [customLocation, setCustomLocation] = useState('')
+  const [showCustomLocation, setShowCustomLocation] = useState(false)
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -19,6 +22,24 @@ function ShelterRequestForm({ onSubmit, onCancel }) {
       ...formData,
       [name]: type === 'checkbox' ? checked : value
     })
+  }
+
+  const handleLocationChange = (e) => {
+    const value = e.target.value
+    if (value === 'custom') {
+      setShowCustomLocation(true)
+      setFormData({ ...formData, location_current: '' })
+    } else {
+      setShowCustomLocation(false)
+      setCustomLocation('')
+      setFormData({ ...formData, location_current: value })
+    }
+  }
+
+  const handleCustomLocationChange = (e) => {
+    const value = e.target.value
+    setCustomLocation(value)
+    setFormData({ ...formData, location_current: value })
   }
 
   const handleSubmit = (e) => {
@@ -52,15 +73,33 @@ function ShelterRequestForm({ onSubmit, onCancel }) {
         </p>
       </div>
 
-      <input
-        type="text"
+      <select
         name="location_current"
-        placeholder="موقعك الحالي (مطلوب) - مثال: بيروت، الضاحية، صيدا..."
-        value={formData.location_current}
-        onChange={handleChange}
+        value={showCustomLocation ? 'custom' : formData.location_current}
+        onChange={handleLocationChange}
         className="input"
         required
-      />
+        style={{ marginBottom: showCustomLocation ? '8px' : '16px' }}
+      >
+        <option value="">اختر موقعك الحالي (مطلوب)</option>
+        {LEBANESE_LOCATIONS.map((location) => (
+          <option key={location} value={location}>
+            {location}
+          </option>
+        ))}
+        <option value="custom">➕ موقع آخر (حدد بنفسك)</option>
+      </select>
+
+      {showCustomLocation && (
+        <input
+          type="text"
+          placeholder="اكتب اسم الموقع"
+          value={customLocation}
+          onChange={handleCustomLocationChange}
+          className="input"
+          required
+        />
+      )}
 
       <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
         <div style={{ flex: 1 }}>
