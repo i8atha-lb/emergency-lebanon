@@ -8,8 +8,8 @@
 const EDGE_FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_URL?.replace('.supabase.co', '.supabase.co/functions/v1') || ''
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-// Temporarily disable edge functions until CORS/auth is fixed
-const EDGE_FUNCTIONS_ENABLED = false
+// Edge functions enabled (JWT verification disabled in Supabase dashboard)
+const EDGE_FUNCTIONS_ENABLED = true
 
 /**
  * Check if user is rate limited (check only, doesn't record)
