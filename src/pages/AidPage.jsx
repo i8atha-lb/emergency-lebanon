@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, getDeviceId, canEditPost } from '../lib/supabase'
 import { checkRateLimit } from '../lib/edgeFunctions'
+import { checkFormContent, isValidLebanesePhone } from '../lib/contentModeration'
 
 function AidPage({ isAdmin }) {
   const [aidPosts, setAidPosts] = useState([])
@@ -56,6 +57,19 @@ function AidPage({ isAdmin }) {
     }
 
     try {
+      // Content moderation check
+      const contentCheck = checkFormContent(formData)
+      if (contentCheck.isBlocked) {
+        alert(`❌ ${contentCheck.reason}`)
+        return
+      }
+
+      // Validate Lebanese phone number
+      if (formData.contact_phone && !isValidLebanesePhone(formData.contact_phone)) {
+        alert('رقم الهاتف غير صحيح. يرجى إدخال رقم لبناني صحيح (مثال: 03123456 أو +96170123456)')
+        return
+      }
+
       // Check rate limit before inserting
       const deviceId = getDeviceId()
       const rateLimitCheck = await checkRateLimit('post_aid', deviceId)

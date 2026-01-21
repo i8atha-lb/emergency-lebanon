@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase, getDeviceId, canEditPost } from '../lib/supabase'
 import { checkRateLimit } from '../lib/edgeFunctions'
+import { checkFormContent, isValidLebanesePhone } from '../lib/contentModeration'
 import ShelterCard from '../components/ShelterCard'
 import ShelterForm from '../components/ShelterForm'
 
@@ -33,6 +34,19 @@ function SheltersPage({ isAdmin }) {
 
   const handleSubmit = async (formData) => {
     try {
+      // Content moderation check
+      const contentCheck = checkFormContent(formData)
+      if (contentCheck.isBlocked) {
+        alert(`❌ ${contentCheck.reason}`)
+        return
+      }
+
+      // Validate Lebanese phone number
+      if (formData.contact_phone && !isValidLebanesePhone(formData.contact_phone)) {
+        alert('رقم الهاتف غير صحيح. يرجى إدخال رقم لبناني صحيح (مثال: 03123456 أو +96170123456)')
+        return
+      }
+
       if (editingShelter) {
         // Update existing shelter (no rate limit check for edits)
         const { error } = await supabase
