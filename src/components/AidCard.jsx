@@ -2,7 +2,6 @@ import ReportButton from './ReportButton'
 import DeleteWithCode from './DeleteWithCode'
 
 function AidCard({ post, canEdit, onDelete, onReportSuccess }) {
-  // Relative time in Arabic
   const getRelativeTime = (dateString) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -12,108 +11,86 @@ function AidCard({ post, canEdit, onDelete, onReportSuccess }) {
     const diffDays = Math.floor(diffHours / 24)
 
     if (diffMins < 1) return 'الآن'
-    if (diffMins < 60) return `منذ ${diffMins} دقيقة`
-    if (diffHours < 24) return `منذ ${diffHours} ساعة`
-    if (diffDays < 7) return `منذ ${diffDays} يوم`
-
-    return date.toLocaleDateString('ar-LB', {
-      month: 'short',
-      day: 'numeric'
-    })
+    if (diffMins < 60) return `منذ ${diffMins} د`
+    if (diffHours < 24) return `منذ ${diffHours} س`
+    if (diffDays < 7) return `منذ ${diffDays} ي`
+    return date.toLocaleDateString('ar-LB', { month: 'short', day: 'numeric' })
   }
 
   const isNeeded = post.type === 'needed'
   const isSuspicious = post.flags_count >= 3
 
   return (
-    <div
-      className={`post-card ${isNeeded ? 'post-card--aid-needed' : 'post-card--aid-available'}`}
-      style={isSuspicious ? { borderColor: '#ff6b6b' } : {}}
-    >
-      {/* Header with type indicator */}
-      <div className={`post-card__header ${isNeeded ? 'post-card__header--aid-needed' : 'post-card__header--aid-available'}`}>
-        <div className="post-card__type-badge">
-          <span className="post-card__type-icon">{isNeeded ? '🆘' : '✅'}</span>
-          <span>{isNeeded ? 'يحتاج مساعدة' : 'مساعدة متاحة'}</span>
+    <div className="card" style={isSuspicious ? { borderRight: '3px solid #dc3545' } : {}}>
+      {/* Header Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            background: isNeeded ? '#dc3545' : '#28a745',
+            color: 'white',
+            padding: '2px 8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}>
+            {isNeeded ? '🆘 محتاج' : '✅ متوفر'}
+          </span>
+          {post.category && (
+            <span style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
+              {post.category}
+            </span>
+          )}
+          <span style={{ fontSize: '13px', color: '#666' }}>{getRelativeTime(post.created_at)}</span>
         </div>
-        <span className="post-card__time">{getRelativeTime(post.created_at)}</span>
-      </div>
-
-      {/* Category Badge */}
-      {post.category && (
-        <div className="post-card__category">
-          <span className="post-card__category-badge">{post.category}</span>
-        </div>
-      )}
-
-      {/* Location if available */}
-      {post.location && (
-        <div className="post-card__location">
-          <span className="post-card__location-icon">📍</span>
-          <h3 className="post-card__location-text">{post.location}</h3>
-        </div>
-      )}
-
-      {/* Warning if flagged */}
-      {isSuspicious && (
-        <div className="post-card__warning">
-          <span className="post-card__warning-icon">⚠️</span>
-          <div>
-            <strong>تحذير:</strong> تم الإبلاغ عن هذا المنشور من قبل {post.flags_count} مستخدمين.
-            يرجى التحقق قبل التواصل.
-          </div>
-        </div>
-      )}
-
-      {/* Description */}
-      <div className="post-card__description">
-        <p>{post.description}</p>
-      </div>
-
-      {/* Contact Section */}
-      <div className="post-card__contact">
-        <div className="post-card__contact-label">
-          {isNeeded ? 'للتواصل وتقديم المساعدة' : 'للتواصل والاستفادة'}
-        </div>
-        {post.contact_name && (
-          <div className="post-card__contact-name">
-            <span>👤</span> {post.contact_name}
-          </div>
-        )}
-        <a
-          href={`tel:${post.contact_phone}`}
-          className={`post-card__phone ${isNeeded ? 'post-card__phone--urgent' : ''}`}
-        >
-          <span className="post-card__phone-icon">📞</span>
-          <span className="post-card__phone-number">{post.contact_phone}</span>
-          <span className="post-card__phone-action">{isNeeded ? 'اتصل للمساعدة' : 'اتصل الآن'}</span>
-        </a>
-      </div>
-
-      {/* Actions Footer */}
-      <div className="post-card__actions">
-        <div className="post-card__actions-right">
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           <ReportButton
             postType="aid"
             postId={post.id}
             currentFlags={post.flags_count || 0}
             onReportSuccess={onReportSuccess}
           />
-          {post.deletion_code_hash && (
-            <DeleteWithCode
-              postId={post.id}
-              postType="aid"
-              deletionCodeHash={post.deletion_code_hash}
-              onDeleteSuccess={onReportSuccess}
-            />
-          )}
-        </div>
-        {canEdit && (
-          <div className="post-card__actions-left">
-            <button className="post-card__btn post-card__btn--delete" onClick={onDelete}>
+          {canEdit && (
+            <button onClick={onDelete} style={{ background: '#dc3545', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '4px', fontSize: '12px', cursor: 'pointer' }}>
               حذف
             </button>
-          </div>
+          )}
+        </div>
+      </div>
+
+      {/* Warning */}
+      {isSuspicious && (
+        <div style={{ background: '#fff3cd', padding: '6px 10px', borderRadius: '4px', marginBottom: '8px', fontSize: '12px', color: '#856404' }}>
+          ⚠️ تم الإبلاغ عن هذا المنشور {post.flags_count} مرات
+        </div>
+      )}
+
+      {/* Location */}
+      {post.location && (
+        <div style={{ fontSize: '14px', color: '#555', marginBottom: '6px' }}>
+          📍 {post.location}
+        </div>
+      )}
+
+      {/* Description */}
+      <div style={{ fontSize: '14px', color: '#333', marginBottom: '8px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>
+        {post.description}
+      </div>
+
+      {/* Contact */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #eee', paddingTop: '8px' }}>
+        <div>
+          {post.contact_name && <span style={{ fontSize: '13px', marginLeft: '8px' }}>👤 {post.contact_name}</span>}
+          <a href={`tel:${post.contact_phone}`} style={{ fontSize: '15px', fontWeight: 'bold', color: '#28a745', textDecoration: 'none' }}>
+            📞 {post.contact_phone}
+          </a>
+        </div>
+        {post.deletion_code_hash && (
+          <DeleteWithCode
+            postId={post.id}
+            postType="aid"
+            deletionCodeHash={post.deletion_code_hash}
+            onDeleteSuccess={onReportSuccess}
+          />
         )}
       </div>
     </div>
