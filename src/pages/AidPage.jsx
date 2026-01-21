@@ -4,7 +4,7 @@ import { checkRateLimit } from '../lib/edgeFunctions'
 import { checkFormContent, isValidLebanesePhone } from '../lib/contentModeration'
 import { generateDeletionCode, hashDeletionCode } from '../lib/deletionCode'
 import DeletionCodeDisplay from '../components/DeletionCodeDisplay'
-import DeleteWithCode from '../components/DeleteWithCode'
+import AidCard from '../components/AidCard'
 import { LEBANESE_LOCATIONS } from '../lib/locations'
 
 function AidPage({ isAdmin }) {
@@ -298,106 +298,15 @@ function AidPage({ isAdmin }) {
           <p style={{ fontSize: '18px', color: '#666' }}>لا توجد منشورات حالياً</p>
         </div>
       ) : (
-        filteredPosts.map(post => {
-          const canEdit = canEditPost(post) || isAdmin
-          const formatDate = (dateString) => {
-            const date = new Date(dateString)
-            return date.toLocaleDateString('ar-LB', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })
-          }
-
-          return (
-            <div key={post.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                <div>
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '4px 12px',
-                    borderRadius: '20px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    marginBottom: '8px',
-                    background: post.type === 'needed' ? '#dc3545' : '#28a745',
-                    color: 'white'
-                  }}>
-                    {post.type === 'needed' ? '🆘 محتاج' : '✅ متوفر'}
-                  </span>
-                  {post.category && (
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '4px 12px',
-                      borderRadius: '20px',
-                      fontSize: '14px',
-                      marginRight: '8px',
-                      background: '#f8f9fa',
-                      color: '#333'
-                    }}>
-                      {post.category}
-                    </span>
-                  )}
-                  <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
-                    {formatDate(post.created_at)}
-                  </p>
-                </div>
-                {canEdit && (
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => handleDelete(post.id)}
-                    style={{ padding: '8px 16px', fontSize: '14px' }}
-                  >
-                    حذف
-                  </button>
-                )}
-              </div>
-
-              <p style={{
-                marginBottom: '12px',
-                lineHeight: '1.8',
-                whiteSpace: 'pre-wrap',
-                fontSize: '16px'
-              }}>
-                {post.description}
-              </p>
-
-              {post.location && (
-                <p style={{ marginBottom: '8px', color: '#666' }}>
-                  📍 {post.location}
-                </p>
-              )}
-
-              <div style={{
-                borderTop: '1px solid #eee',
-                paddingTop: '12px',
-                marginTop: '12px'
-              }}>
-                {post.contact_name && (
-                  <p style={{ marginBottom: '4px' }}>
-                    👤 {post.contact_name}
-                  </p>
-                )}
-                <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#28a745' }}>
-                  📞 {post.contact_phone}
-                </p>
-              </div>
-
-              {post.deletion_code_hash && (
-                <div style={{ marginTop: '12px', textAlign: 'center' }}>
-                  <DeleteWithCode
-                    postId={post.id}
-                    postType="aid"
-                    deletionCodeHash={post.deletion_code_hash}
-                    onDeleteSuccess={loadAidPosts}
-                  />
-                </div>
-              )}
-            </div>
-          )
-        })
+        filteredPosts.map(post => (
+          <AidCard
+            key={post.id}
+            post={post}
+            canEdit={canEditPost(post) || isAdmin}
+            onDelete={() => handleDelete(post.id)}
+            onReportSuccess={loadAidPosts}
+          />
+        ))
       )}
 
       {deletionCode && (

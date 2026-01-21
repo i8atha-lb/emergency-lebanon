@@ -2,143 +2,146 @@ import ReportButton from './ReportButton'
 import DeleteWithCode from './DeleteWithCode'
 
 function ShelterRequestCard({ request, canEdit, onDelete, onReportSuccess }) {
-  const formatDate = (dateString) => {
+  // Relative time in Arabic
+  const getRelativeTime = (dateString) => {
     const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+
+    if (diffMins < 1) return 'الآن'
+    if (diffMins < 60) return `منذ ${diffMins} دقيقة`
+    if (diffHours < 24) return `منذ ${diffHours} ساعة`
+    if (diffDays < 7) return `منذ ${diffDays} يوم`
+
     return date.toLocaleDateString('ar-LB', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      month: 'short',
+      day: 'numeric'
     })
   }
 
   const isSuspicious = request.flags_count >= 3
+  const hasSpecialNeeds = request.has_children || request.has_elderly || request.has_medical_needs
 
   return (
-    <div className="card" style={isSuspicious ? { borderLeft: '4px solid #ff6b6b' } : {}}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ color: '#dc3545', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🆘 {request.location_current}
-          </h3>
-          <p style={{ fontSize: '14px', color: '#666' }}>
-            {formatDate(request.created_at)}
-          </p>
+    <div className="post-card post-card--request" style={isSuspicious ? { borderColor: '#ff6b6b' } : {}}>
+      {/* Header with type indicator */}
+      <div className="post-card__header post-card__header--request">
+        <div className="post-card__type-badge">
+          <span className="post-card__type-icon">🆘</span>
+          <span>يحتاج مأوى</span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <span className="post-card__time">{getRelativeTime(request.created_at)}</span>
+      </div>
+
+      {/* Location - Primary Info */}
+      <div className="post-card__location">
+        <span className="post-card__location-icon">📍</span>
+        <h3 className="post-card__location-text">{request.location_current}</h3>
+      </div>
+
+      {/* Warning if flagged */}
+      {isSuspicious && (
+        <div className="post-card__warning">
+          <span className="post-card__warning-icon">⚠️</span>
+          <div>
+            <strong>تحذير:</strong> تم الإبلاغ عن هذا الطلب من قبل {request.flags_count} مستخدمين.
+            يرجى الحذر عند التواصل.
+          </div>
+        </div>
+      )}
+
+      {/* Info Grid */}
+      <div className="post-card__info-grid">
+        <div className="post-card__info-item">
+          <span className="post-card__info-icon">👥</span>
+          <div>
+            <span className="post-card__info-label">عدد الأشخاص</span>
+            <span className="post-card__info-value">{request.people_count} {request.people_count === 1 ? 'شخص' : 'أشخاص'}</span>
+          </div>
+        </div>
+        {request.duration_needed && (
+          <div className="post-card__info-item">
+            <span className="post-card__info-icon">⏱️</span>
+            <div>
+              <span className="post-card__info-label">المدة المطلوبة</span>
+              <span className="post-card__info-value">{request.duration_needed}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Special Needs Badges */}
+      {hasSpecialNeeds && (
+        <div className="post-card__badges">
+          {request.has_children && (
+            <span className="post-card__badge post-card__badge--children">
+              👶 أطفال
+            </span>
+          )}
+          {request.has_elderly && (
+            <span className="post-card__badge post-card__badge--elderly">
+              👴 مسنين
+            </span>
+          )}
+          {request.has_medical_needs && (
+            <span className="post-card__badge post-card__badge--medical">
+              🏥 احتياجات طبية
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Notes */}
+      {request.notes && (
+        <div className="post-card__notes">
+          <p>{request.notes}</p>
+        </div>
+      )}
+
+      {/* Contact Section - Most Important */}
+      <div className="post-card__contact">
+        <div className="post-card__contact-label">للتواصل وتقديم المساعدة</div>
+        {request.contact_name && (
+          <div className="post-card__contact-name">
+            <span>👤</span> {request.contact_name}
+          </div>
+        )}
+        <a href={`tel:${request.contact_phone}`} className="post-card__phone post-card__phone--urgent">
+          <span className="post-card__phone-icon">📞</span>
+          <span className="post-card__phone-number">{request.contact_phone}</span>
+          <span className="post-card__phone-action">اتصل للمساعدة</span>
+        </a>
+      </div>
+
+      {/* Actions Footer */}
+      <div className="post-card__actions">
+        <div className="post-card__actions-right">
           <ReportButton
             postType="shelter_request"
             postId={request.id}
             currentFlags={request.flags_count || 0}
             onReportSuccess={onReportSuccess}
           />
-          {canEdit && (
-            <button
-              className="btn btn-danger"
-              onClick={onDelete}
-              style={{ padding: '8px 16px', fontSize: '14px' }}
-            >
+          {request.deletion_code_hash && (
+            <DeleteWithCode
+              postId={request.id}
+              postType="request"
+              deletionCodeHash={request.deletion_code_hash}
+              onDeleteSuccess={onReportSuccess}
+            />
+          )}
+        </div>
+        {canEdit && (
+          <div className="post-card__actions-left">
+            <button className="post-card__btn post-card__btn--delete" onClick={onDelete}>
               حذف
             </button>
-          )}
-        </div>
-      </div>
-
-      {isSuspicious && (
-        <div style={{
-          background: '#fff3cd',
-          border: '1px solid #ffc107',
-          borderRadius: '8px',
-          padding: '12px',
-          marginBottom: '12px',
-          display: 'flex',
-          alignItems: 'start',
-          gap: '8px'
-        }}>
-          <span style={{ fontSize: '20px' }}>⚠️</span>
-          <div>
-            <strong style={{ color: '#856404' }}>تحذير:</strong>
-            <p style={{ color: '#856404', fontSize: '14px', marginTop: '4px' }}>
-              تم الإبلاغ عن هذا الطلب من قبل {request.flags_count} {request.flags_count === 1 ? 'مستخدم' : 'مستخدمين'}.
-              يرجى الحذر عند التواصل.
-            </p>
           </div>
-        </div>
-      )}
-
-      <div style={{
-        background: '#f8f9fa',
-        borderRadius: '8px',
-        padding: '12px',
-        marginBottom: '12px'
-      }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '8px' }}>
-          <div>
-            <strong>👥 عدد الأشخاص:</strong> {request.people_count}
-          </div>
-          {request.duration_needed && (
-            <div>
-              <strong>⏱️ المدة:</strong> {request.duration_needed}
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', fontSize: '14px' }}>
-          {request.has_children && (
-            <span style={{ color: '#007bff' }}>👶 يوجد أطفال</span>
-          )}
-          {request.has_elderly && (
-            <span style={{ color: '#6c757d' }}>👴 يوجد مسنين</span>
-          )}
-          {request.has_medical_needs && (
-            <span style={{ color: '#dc3545' }}>🏥 احتياجات طبية</span>
-          )}
-        </div>
-      </div>
-
-      {request.notes && (
-        <p style={{
-          marginBottom: '12px',
-          padding: '12px',
-          background: '#fff',
-          border: '1px solid #eee',
-          borderRadius: '8px',
-          whiteSpace: 'pre-wrap',
-          lineHeight: '1.6'
-        }}>
-          {request.notes}
-        </p>
-      )}
-
-      <div style={{
-        borderTop: '1px solid #eee',
-        paddingTop: '12px',
-        marginTop: '12px'
-      }}>
-        <p style={{ marginBottom: '8px', color: '#666', fontSize: '14px' }}>
-          <strong>للتواصل وتقديم المساعدة:</strong>
-        </p>
-        {request.contact_name && (
-          <p style={{ marginBottom: '4px' }}>
-            👤 {request.contact_name}
-          </p>
         )}
-        <p style={{ fontSize: '18px', fontWeight: 'bold', color: '#28a745' }}>
-          📞 {request.contact_phone}
-        </p>
       </div>
-
-      {request.deletion_code_hash && (
-        <div style={{ marginTop: '12px', textAlign: 'center' }}>
-          <DeleteWithCode
-            postId={request.id}
-            postType="request"
-            deletionCodeHash={request.deletion_code_hash}
-            onDeleteSuccess={onReportSuccess}
-          />
-        </div>
-      )}
     </div>
   )
 }
