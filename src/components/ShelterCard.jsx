@@ -1,4 +1,5 @@
 import ReportButton from './ReportButton'
+import DeleteWithCode from './DeleteWithCode'
 
 function ShelterCard({ shelter, canEdit, onDelete, onEdit, onReportSuccess }) {
   const formatDate = (dateString) => {
@@ -124,6 +125,17 @@ function ShelterCard({ shelter, canEdit, onDelete, onEdit, onReportSuccess }) {
           📞 {shelter.contact_phone}
         </p>
       </div>
+
+      {shelter.deletion_code_hash && (
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <DeleteWithCode
+            postId={shelter.id}
+            postType="shelter"
+            deletionCodeHash={shelter.deletion_code_hash}
+            onDeleteSuccess={onReportSuccess}
+          />
+        </div>
+      )}
     </div>
   )
 }
