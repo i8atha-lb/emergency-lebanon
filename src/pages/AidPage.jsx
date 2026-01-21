@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react'
 import { supabase, getDeviceId, canEditPost } from '../lib/supabase'
 import { checkRateLimit } from '../lib/edgeFunctions'
 import { checkFormContent, isValidLebanesePhone } from '../lib/contentModeration'
+import { generateDeletionCode, hashDeletionCode } from '../lib/deletionCode'
+import DeletionCodeDisplay from '../components/DeletionCodeDisplay'
+import DeleteWithCode from '../components/DeleteWithCode'
 
 function AidPage({ isAdmin }) {
   const [aidPosts, setAidPosts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [filterType, setFilterType] = useState('all')
+  const [deletionCode, setDeletionCode] = useState(null)
   const [formData, setFormData] = useState({
     type: 'needed',
     category: '',
@@ -79,16 +83,22 @@ function AidPage({ isAdmin }) {
         return
       }
 
+      // Generate deletion code
+      const code = generateDeletionCode()
+      const codeHash = hashDeletionCode(code)
+
       const { error } = await supabase
         .from('aid_posts')
         .insert([{
           ...formData,
-          device_id: deviceId
+          device_id: deviceId,
+          deletion_code_hash: codeHash
         }])
 
       if (error) throw error
 
-      alert('تم إضافة المنشور بنجاح!')
+      // Show deletion code to user
+      setDeletionCode(code)
       setShowForm(false)
       setFormData({
         type: 'needed',
@@ -340,9 +350,30 @@ function AidPage({ isAdmin }) {
                   📞 {post.contact_phone}
                 </p>
               </div>
+
+              {post.deletion_code_hash && (
+                <div style={{ marginTop: '12px', textAlign: 'center' }}>
+                  <DeleteWithCode
+                    postId={post.id}
+                    postType="aid"
+                    deletionCodeHash={post.deletion_code_hash}
+                    onDeleteSuccess={loadAidPosts}
+                  />
+                </div>
+              )}
             </div>
           )
         })
+      )}
+
+      {deletionCode && (
+        <DeletionCodeDisplay
+          code={deletionCode}
+          onClose={() => {
+            setDeletionCode(null)
+            loadAidPosts()
+          }}
+        />
       )}
     </div>
   )

@@ -128,6 +128,17 @@ function ShelterRequestCard({ request, canEdit, onDelete, onReportSuccess }) {
           📞 {request.contact_phone}
         </p>
       </div>
+
+      {request.deletion_code_hash && (
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <DeleteWithCode
+            postId={request.id}
+            postType="request"
+            deletionCodeHash={request.deletion_code_hash}
+            onDeleteSuccess={onReportSuccess}
+          />
+        </div>
+      )}
     </div>
   )
 }
